@@ -1,5 +1,7 @@
 
 using AppDev_MidtermExam_.Properties.Data;
+using AppDev_MidtermExam_.Repositories;
+using AppDev_MidtermExam_.Repositories.Interfaces;
 using AppDev_MidtermExam_.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -66,6 +68,8 @@ builder.Services.AddAuthentication(options =>
         )
     };
 });
+
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // Configure Authorization
 builder.Services.AddAuthorization();

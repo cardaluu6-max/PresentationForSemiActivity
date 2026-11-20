@@ -31,7 +31,7 @@ namespace AppDev_MidtermExam_.MiddleWare
             var response = new ApiResponse<object>
             {
                 Success = false,
-                Message = "An unexpected error occurred. Please try again later.",
+                Message = exception.Message,
                 Data = null
             };
             return context.Response.WriteAsJsonAsync(response);

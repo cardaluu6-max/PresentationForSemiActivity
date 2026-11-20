@@ -1,10 +1,14 @@
-﻿using AppDev_MidtermExam_.DTO;
+﻿using AppDev_MidtermExam_.Common;
+using AppDev_MidtermExam_.DTO;
+using AppDev_MidtermExam_.Models;
 using AppDev_MidtermExam_.Properties.Data;
+using AppDev_MidtermExam_.Repositories;
+using AppDev_MidtermExam_.Repositories.Interfaces;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using AppDev_MidtermExam_.Common;
+using Mapster;
 
 namespace AppDev_MidtermExam_.Controllers
 {
@@ -13,98 +17,102 @@ namespace AppDev_MidtermExam_.Controllers
     [Authorize]
     public class ProductControllers : ControllerBase
     {
-        public readonly DatabaseHelper _db;
+        private readonly IProductRepository _productRepository;
 
-        public ProductControllers(DatabaseHelper db)
+        public ProductControllers(IProductRepository productRepository)
         {
-            _db = db;
+            _productRepository = productRepository;
         }
 
         [HttpGet]
-        [AllowAnonymous]
-        public IActionResult GetAllProducts()
+        [Authorize(Roles = "Admin, Student")]
+        public async Task<IActionResult> GetAllProducts()
         {
+            var products = await _productRepository.GetAllAsync();
+            var productDTO = products.Adapt<List<ProductResponseDTO>>();
 
-            using var connection = _db.CreateConnection();
-
-            var products = connection.Query<ProductResponseDTO>(
-                "SELECT ProductName, ProductPrice, ProductQuantity, ProductCapabilities FROM Products"
-                );
-            return Ok(new ApiResponse<List<ProductResponseDTO>> { 
-                Success = true, 
-                Message = "Products retrieved successfully.", 
-                Data = products.ToList() 
+            return Ok(new ApiResponse<List<Products>>
+            {
+                Success = true,
+                Message = "Products retrieved successfully.",
+                Data = products.ToList()
             });
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetProductById(int id) 
+        public async Task<IActionResult> GetProductById(int id)
         {
-            if(!ModelState.IsValid)
-            return BadRequest(ModelState);
-            using var connection = _db.CreateConnection();
+            
 
-            var products = connection.Query<ProductResponseDTO>(
-                "SELECT ProductName, ProductPrice, ProductQuantity, ProductCapabilities FROM Products WHERE Id = @Id",
-                new { Id = id }
-                ).ToList();
-            return products.Count > 0 ? Ok(new ApiResponse<ProductResponseDTO> { 
-                Success = true, 
-                Message = "Product retrieved successfully.", 
-                Data = products.FirstOrDefault() 
-            }) : NotFound(new ApiResponse<object> { 
-                Success = false, 
-                Message = $"Product with ID {id} not found.", 
-                Data = null 
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+
+            var product = await _productRepository.GetByIdAsync(id);
+
+            if (product == null)
+            {
+                return NotFound(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"Product with ID:{id} is not found",
+                    Data = null
+                });
+            }
+
+            var productDTO = product.Adapt<List<ProductResponseDTO>>();
+            return Ok(new ApiResponse<ProductResponseDTO>
+            {
+                Success = false,
+                Message = $"Product with ID {id} not found.",
+                Data = null
             });
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public IActionResult CreateProduct([FromBody] CreateProductDTO product)
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductDTO product)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            using var connection = _db.CreateConnection();
+            var productModel = product.Adapt<Products>();
 
 
-            var rows = connection.Execute(
-                "INSERT INTO Products (ProductId, ProductName, ProductPrice, ProductQuantity, ProductCapabilities) VALUES (@ProductId, @ProductName, @ProductPrice, @ProductQuantity, @ProductCapabilities)", product
-                );
+            var rows = await _productRepository.CreateAsync(productModel);
 
-            return rows > 0 ? Ok("Product Added") : BadRequest("Product was not added");  
+            return rows > 0 ? Ok("Product Added") : BadRequest("Product was not added");
 
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPut("{id}")]
-        public IActionResult UpdateProduct(int id, [FromBody] UpdateProductDTO product)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+        //[Authorize(Roles = "Admin")]
+        //[HttpPut("{id}")]
+        //public IActionResult UpdateProduct(int id, [FromBody] UpdateProductDTO product)
+        //{
+        //    if (!ModelState.IsValid)
+        //        return BadRequest(ModelState);
 
-            using var connection = _db.CreateConnection();
+        //    using var connection = _db.CreateConnection();
 
-            var rows = connection.Execute(
-                "UPDATE Products SET ProductName = @ProductName, ProductPrice = @ProductPrice, ProductQuantity = @ProductQuantity, ProductCapabilities = @ProductCapabilities WHERE Id = @Id",
-                new { Id = id, ProductName = product.ProductName, ProductPrice = product.ProductPrice, ProductQuantity = product.ProductQuantity, ProductCapabilities = product.ProductCapabilities }
-                );
+        //    var rows = connection.Execute(
+        //        "UPDATE Products SET ProductName = @ProductName, ProductPrice = @ProductPrice, ProductQuantity = @ProductQuantity, ProductCapabilities = @ProductCapabilities WHERE Id = @Id",
+        //        new { Id = id, ProductName = product.ProductName, ProductPrice = product.ProductPrice, ProductQuantity = product.ProductQuantity, ProductCapabilities = product.ProductCapabilities }
+        //        );
 
-            return rows > 0 ? Ok("Product Updated") : BadRequest("Product was not updated");
-        }
-        [Authorize(Roles = "Admin")]
-        [HttpDelete("{id}")]
-        public IActionResult DeleteProduct(int id)
-        {
-            using var connection = _db.CreateConnection();
+        //    return rows > 0 ? Ok("Product Updated") : BadRequest("Product was not updated");
+        //}
+        //[Authorize(Roles = "Admin")]
+        //[HttpDelete("{id}")]
+        //public IActionResult DeleteProduct(int id)
+        //{
+        //    using var connection = _db.CreateConnection();
 
-            var rows = connection.Execute(
-                "DELETE FROM Products WHERE Id = @Id",
-                new { Id = id }
-                );
+        //    var rows = connection.Execute(
+        //        "DELETE FROM Products WHERE Id = @Id",
+        //        new { Id = id }
+        //        );
 
-            return rows > 0 ? Ok("Product Deleted") : BadRequest("Product was not deleted");
-        }
+        //    return rows > 0 ? Ok("Product Deleted") : BadRequest("Product was not deleted");
+        //}
     }
 }
