@@ -19,6 +19,6 @@ namespace AppDev_MidtermExam_.DTO
         public int ProductQuantity { get; set; }
         [Required(ErrorMessage = "Product capabilities are required")]
         [StringLength(maximumLength: 200, MinimumLength = 2, ErrorMessage = "Product capabilities must be between 2 and 200 characters")]
-        public string ProductCapabilities { get; set; }
+        public string? ProductCapabilities { get; set; }
     }
 }

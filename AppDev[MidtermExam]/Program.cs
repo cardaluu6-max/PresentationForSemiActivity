@@ -37,6 +37,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<DatabaseHelper>();
 builder.Services.AddScoped<TokenService>();
 
+
 // Get JWT settings from appsettings.json
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
@@ -44,6 +45,7 @@ var secretKey = jwtSettings["SecretKey"]!;
 
 // Configure JWT Authentication
 builder.Services.AddAuthentication(options =>
+
 {
     options.DefaultAuthenticateScheme =
         JwtBearerDefaults.AuthenticationScheme;
@@ -82,6 +84,7 @@ app.UseMiddleware<AppDev_MidtermExam_.MiddleWare.ErrorHandlingMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
 
 app.UseHttpsRedirection();
 

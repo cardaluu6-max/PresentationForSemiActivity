@@ -31,11 +31,11 @@ namespace AppDev_MidtermExam_.Controllers
             var products = await _productRepository.GetAllAsync();
             var productDTO = products.Adapt<List<ProductResponseDTO>>();
 
-            return Ok(new ApiResponse<List<Products>>
+            return Ok(new ApiResponse<List<ProductResponseDTO>>
             {
                 Success = true,
                 Message = "Products retrieved successfully.",
-                Data = products.ToList()
+                Data = productDTO.ToList()
             });
         }
 
@@ -60,12 +60,12 @@ namespace AppDev_MidtermExam_.Controllers
                 });
             }
 
-            var productDTO = product.Adapt<List<ProductResponseDTO>>();
+            var productDTO = product.Adapt<ProductResponseDTO>();
             return Ok(new ApiResponse<ProductResponseDTO>
             {
-                Success = false,
-                Message = $"Product with ID {id} not found.",
-                Data = null
+                Success = true,
+                Message = "Products retrieved successfully.",
+                Data = productDTO
             });
         }
 
